@@ -20,3 +20,5 @@ venv
 
 # LOCAL DATA
 datalake
+src/notebooks/output
+src/scripts/output
