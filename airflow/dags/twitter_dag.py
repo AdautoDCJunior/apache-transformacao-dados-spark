@@ -6,6 +6,7 @@ from operators.twitter_operator import TwitterOperator
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.utils.dates import days_ago
 from os.path import join
+from pathlib import Path
 
 query = "datascience"
 with DAG(
@@ -13,13 +14,20 @@ with DAG(
   start_date=days_ago(6),
   schedule_interval='0 0 * * *'
 ) as dag:
+  base_folder = join(
+    str(Path(__file__).parents[2]),
+    'datalake',
+    '{stage}',
+    'twitter_datascience',
+    '{partition}'
+  )
+  partition_folder_extract = 'extract_date={{ data_interval_start.strftime("%Y-%m-%d") }}'
+
   twitter_operator = TwitterOperator(
     task_id='twitter_datascience',
     file_path=join(
-      'datalake',
-      'twitter_datascience',
-      f'extract_date={{{{ ds }}}}',
-      f'datascience_{{{{ ds_nodash }}}}.json'
+      base_folder.format(stage='Bronze', partition=partition_folder_extract),
+      'datascience_{{ ds_nodash }}.json'
     ),
     start_time='{{ data_interval_start.strftime("%Y-%m-%dT%H:%M:%S.00Z") }}',
     end_time='{{ data_interval_end.strftime("%Y-%m-%dT%H:%M:%S.00Z") }}',
@@ -32,9 +40,9 @@ with DAG(
     name='twitter_transformation',
     application_args=[
       '--src', 
-      '/home/adauto_junior/cursos/alura/airflow-transformacao-dados-spark/datalake/twitter_datascience', 
+      base_folder.format(stage='Bronze', partition=partition_folder_extract), 
       '--dst',
-      '/home/adauto_junior/cursos/alura/airflow-transformacao-dados-spark/transform_data',
+      base_folder.format(stage='Silver', partition=''),
       '--process-date',
       '{{ ds }}'
     ]
