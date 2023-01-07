@@ -36,8 +36,8 @@ with DAG(
 
   twitter_transform = SparkSubmitOperator(
     task_id='transform_twitter_datascience',
-    application='/home/adauto_junior/cursos/alura/airflow-transformacao-dados-spark/src/scripts/transformation.py',
     name='twitter_transformation',
+    application='/home/adauto_junior/cursos/alura/airflow-transformacao-dados-spark/src/scripts/transformation.py',
     application_args=[
       '--src', 
       base_folder.format(stage='Bronze', partition=partition_folder_extract), 
@@ -48,4 +48,18 @@ with DAG(
     ]
   )
 
-twitter_operator >> twitter_transform
+  twitter_insigth = SparkSubmitOperator(
+    task_id='insight_twitter',
+    name='insight_twitter',
+    application='/home/adauto_junior/cursos/alura/airflow-transformacao-dados-spark/src/scripts/insight_twitter.py',
+    application_args=[
+      '--src',
+      base_folder.format(stage='Silver', partition=''),
+      '--dst',
+      base_folder.format(stage='Gold', partition=''),
+      '--process-date',
+      '{{ ds }}'
+    ]
+  )
+
+twitter_operator >> twitter_transform >> twitter_insigth
